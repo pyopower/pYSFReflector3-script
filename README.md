@@ -7,7 +7,7 @@ Este repositorio contiene un script para automatizar la instalación de [pYSFRef
 Puedes descargar y ejecutar el script directamente con un solo comando. Abre una terminal y pega lo siguiente:
 
 ```bash
-wget -O install_pysfreflector.sh https://raw.githubusercontent.com/pyopower/pYSFReflector3-script/main/install_pysfreflector.sh && chmod +x install_pysfreflector.sh && sudo ./install_pysfreflector.sh
+wget -O install_pysfreflector.sh https://raw.githubusercontent.com/pyopower/pYSFReflector3-script/feat/install-script-improvements/install_pysfreflector.sh && chmod +x install_pysfreflector.sh && sudo ./install_pysfreflector.sh
 ```
 
 Esto descargará el script, le dará permisos de ejecución y lo lanzará.
