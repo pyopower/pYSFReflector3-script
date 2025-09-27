@@ -2,9 +2,19 @@
 
 Este repositorio contiene un script para automatizar la instalación de [pYSFReflector3 de iu5jae](https://github.com/iu5jae/pYSFReflector3) en sistemas Ubuntu y derivados.
 
-## Instalación Automática con Script
+## Instalación Rápida (Recomendado)
 
-Se proporciona un script (`install_pysfreflector.sh`) que instala el software, sus dependencias, y lo configura como un servicio del sistema.
+Puedes descargar y ejecutar el script directamente con un solo comando. Abre una terminal y pega lo siguiente:
+
+```bash
+wget -O install_pysfreflector.sh https://raw.githubusercontent.com/pyopower/pYSFReflector3-script/main/install_pysfreflector.sh && chmod +x install_pysfreflector.sh && sudo ./install_pysfreflector.sh
+```
+
+Esto descargará el script, le dará permisos de ejecución y lo lanzará.
+
+## Instalación Manual (Paso a Paso)
+
+Si prefieres hacerlo manualmente, sigue estos pasos.
 
 ### Requisitos
 
