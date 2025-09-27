@@ -75,16 +75,10 @@ info "La preparación del sistema ha finalizado."
 echo
 
 # --- Instalación del Reflector ---
-info "Instalando dependencias de Python: python3 y python3-pip..."
-apt-get install -y python3 python3-pip
+info "Instalando dependencias de Python: python3, python3-pip y python3-venv..."
+apt-get install -y python3 python3-pip python3-venv
 if [ $? -ne 0 ]; then
     error "No se pudieron instalar las dependencias de Python. El script no puede continuar."
-fi
-
-info "Instalando librerías de Python requeridas (aprslib, tinydb, threaded) con pip..."
-pip install aprslib tinydb threaded --break-system-packages
-if [ $? -ne 0 ]; then
-    error "Falló la instalación de las librerías de Python con pip. El script no puede continuar."
 fi
 
 # --- Descarga y Configuración de Archivos ---
@@ -97,6 +91,18 @@ else
     if [ $? -ne 0 ]; then
         error "Falló la descarga del repositorio desde GitHub."
     fi
+fi
+
+info "Creando un entorno virtual de Python en /opt/pysfreflector/venv..."
+python3 -m venv /opt/pysfreflector/venv
+if [ $? -ne 0 ]; then
+    error "No se pudo crear el entorno virtual de Python."
+fi
+
+info "Instalando librerías de Python (aprslib, tinydb, threaded) en el entorno virtual..."
+/opt/pysfreflector/venv/bin/pip install aprslib tinydb threaded
+if [ $? -ne 0 ]; then
+    error "Falló la instalación de las librerías de Python con pip en el entorno virtual."
 fi
 
 info "Estableciendo permisos de ejecución para el reflector..."
@@ -186,7 +192,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/pysfreflector
-ExecStart=/usr/bin/python3 /opt/pysfreflector/collector3.py
+ExecStart=/opt/pysfreflector/venv/bin/python /opt/pysfreflector/collector3.py
 Restart=always
 RestartSec=5
 
