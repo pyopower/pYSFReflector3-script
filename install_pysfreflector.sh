@@ -4,10 +4,11 @@
 # Script de Instalación para pYSFReflector3
 #
 # Autor: Jules (Asistente de IA)
-# Versión: 1.0
+# Versión: 1.2 (Más robusto)
 #
 # Este script instala pYSFReflector3 de iu5jae, incluyendo sus
 # dependencias y la configuración opcional de un dashboard web.
+# Es resiliente a fallos en la instalación de componentes opcionales.
 # ============================================================================
 
 # --- Variables de Color ---
@@ -51,7 +52,7 @@ case "$choice" in
 esac
 
 if [ "$INSTALL_DASHBOARD" == "s" ]; then
-    info "Se instalará el reflector principal y el dashboard web."
+    info "Se intentará instalar el reflector principal y el dashboard web."
 else
     info "Se instalará únicamente el reflector principal."
 fi
@@ -59,15 +60,17 @@ echo
 
 # --- Preparación del Sistema ---
 info "Actualizando la lista de paquetes del sistema (apt update)..."
-apt-get update
-if [ $? -ne 0 ]; then
-    error "Falló la actualización de la lista de paquetes. Verifica tu conexión a internet y los repositorios."
+if ! apt-get update; then
+    warn "------------------------------------------------------------------"
+    warn "ATENCIÓN: Falló la actualización de la lista de paquetes."
+    warn "Esto puede deberse a repositorios externos no disponibles en tu sistema."
+    warn "El script intentará continuar, pero la instalación de algunos componentes podría fallar."
+    warn "------------------------------------------------------------------"
 fi
 
-info "Instalando 'git' para poder descargar el software..."
-apt-get install -y git
-if [ $? -ne 0 ]; then
-    error "No se pudo instalar 'git'. El script no puede continuar."
+info "Instalando dependencias esenciales: 'git', 'python3', 'pip' y 'venv'..."
+if ! apt-get install -y git python3 python3-pip python3-venv; then
+    error "No se pudieron instalar las dependencias esenciales. El script no puede continuar."
 fi
 
 echo
@@ -75,14 +78,6 @@ info "La preparación del sistema ha finalizado."
 echo
 
 # --- Instalación del Reflector ---
-info "Instalando dependencias de Python: python3, python3-pip y python3-venv..."
-apt-get install -y python3 python3-pip python3-venv
-if [ $? -ne 0 ]; then
-    error "No se pudieron instalar las dependencias de Python. El script no puede continuar."
-fi
-
-# --- Descarga y Configuración de Archivos ---
-# Se clona directamente en el directorio de destino para simplificar.
 info "Creando el directorio de instalación y descargando el software en /opt/pysfreflector..."
 if [ -d "/opt/pysfreflector" ]; then
     warn "El directorio /opt/pysfreflector ya existe. Se omitirá la descarga para no sobrescribir configuraciones existentes."
@@ -138,35 +133,41 @@ info "Configuración manual completada. Continuando con la instalación."
 echo
 
 # --- Instalación del Dashboard (Opcional) ---
+DASHBOARD_INSTALL_SUCCESS="n"
 if [ "$INSTALL_DASHBOARD" == "s" ]; then
     info "Iniciando la instalación del dashboard web..."
 
     info "Instalando dependencias del servidor web: apache2, php, php-sqlite3..."
-    apt-get install -y apache2 php php-sqlite3
-    if [ $? -ne 0 ]; then
-        error "No se pudieron instalar las dependencias del servidor web."
-    fi
-
-    info "Creando directorio web en /var/www/html/ysf..."
-    mkdir -p /var/www/html/ysf
-
-    info "Copiando archivos del dashboard..."
-    if [ -d "/opt/pysfreflector/dashboard" ]; then
-        cp -r /opt/pysfreflector/dashboard/* /var/www/html/ysf/
-        # Asignar permisos adecuados para que el servidor web pueda leer los archivos
-        chown -R www-data:www-data /var/www/html/ysf
-        find /var/www/html/ysf -type d -exec chmod 755 {} \;
-        find /var/www/html/ysf -type f -exec chmod 644 {} \;
+    if ! apt-get install -y apache2 php php-sqlite3; then
+        warn "------------------------------------------------------------------"
+        warn "ATENCIÓN: No se pudieron instalar las dependencias del dashboard (Apache/PHP)."
+        warn "Esto puede deberse a repositorios no disponibles o problemas de red."
+        warn "La instalación del dashboard se OMITIRÁ, pero el reflector principal SÍ se instalará."
+        warn "------------------------------------------------------------------"
+        DASHBOARD_INSTALL_SUCCESS="n"
     else
-        warn "No se encontró el directorio del dashboard en /opt/pysfreflector/dashboard. Omitiendo copia."
-    fi
+        info "Creando directorio web en /var/www/html/ysf..."
+        mkdir -p /var/www/html/ysf
 
-    warn "El dashboard requiere una configuración manual adicional."
-    echo "Debes editar los archivos PHP en '/var/www/html/ysf' para establecer la ruta correcta a la base de datos."
-    echo "Busca la línea: \$db = new SQLite3('/opt/pysfreflector/collector3.db');"
-    echo "Y asegúrate de que la ruta sea correcta."
-    echo
-    info "Instalación del dashboard finalizada."
+        info "Copiando archivos del dashboard..."
+        if [ -d "/opt/pysfreflector/dashboard" ]; then
+            cp -r /opt/pysfreflector/dashboard/* /var/www/html/ysf/
+            chown -R www-data:www-data /var/www/html/ysf
+            find /var/www/html/ysf -type d -exec chmod 755 {} \;
+            find /var/www/html/ysf -type f -exec chmod 644 {} \;
+
+            warn "El dashboard requiere una configuración manual adicional."
+            echo "Debes editar los archivos PHP en '/var/www/html/ysf' para establecer la ruta correcta a la base de datos."
+            echo "Busca la línea: \$db = new SQLite3('/opt/pysfreflector/collector3.db');"
+            echo "Y asegúrate de que la ruta sea correcta."
+            echo
+            info "Instalación del dashboard finalizada con éxito."
+            DASHBOARD_INSTALL_SUCCESS="s"
+        else
+            warn "No se encontró el directorio del dashboard en /opt/pysfreflector/dashboard. Omitiendo copia."
+            DASHBOARD_INSTALL_SUCCESS="n"
+        fi
+    fi
 fi
 
 # --- Configuración de Servicios (systemd) ---
@@ -180,8 +181,8 @@ else
     warn "No se encontró el archivo ysfreflector.service. No se puede instalar el servicio."
 fi
 
-# 2. Servicio del Colector (si se instaló el dashboard)
-if [ "$INSTALL_DASHBOARD" == "s" ]; then
+# 2. Servicio del Colector (si se instaló el dashboard con éxito)
+if [ "$DASHBOARD_INSTALL_SUCCESS" == "s" ]; then
     info "Creando el archivo de servicio para el colector del dashboard..."
     cat << EOF > /etc/systemd/system/collector3.service
 [Unit]
@@ -223,7 +224,7 @@ echo -e "Para el Reflector:"
 echo -e "  ${COLOR_AMARILLO}sudo systemctl enable --now ysfreflector.service${COLOR_NC}"
 echo
 
-if [ "$INSTALL_DASHBOARD" == "s" ]; then
+if [ "$DASHBOARD_INSTALL_SUCCESS" == "s" ]; then
     echo -e "Para el Colector del Dashboard:"
     echo -e "  ${COLOR_AMARILLO}sudo systemctl enable --now collector3.service${COLOR_NC}"
     echo
@@ -231,7 +232,7 @@ fi
 
 echo "Puedes verificar el estado de los servicios en cualquier momento con:"
 echo -e "  ${COLOR_VERDE}sudo systemctl status ysfreflector.service${COLOR_NC}"
-if [ "$INSTALL_DASHBOARD" == "s" ]; then
+if [ "$DASHBOARD_INSTALL_SUCCESS" == "s" ]; then
     echo -e "  ${COLOR_VERDE}sudo systemctl status collector3.service${COLOR_NC}"
 fi
 echo
