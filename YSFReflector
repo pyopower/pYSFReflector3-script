@@ -443,6 +443,7 @@ def blacklist(f_bl, t_reload, cli):
   global IP_LK 
   global SUF_BL
   global SN_BL 
+  global DMRID_BL
 
   f_time_old = 0
   try:
@@ -463,6 +464,7 @@ def blacklist(f_bl, t_reload, cli):
         IP_LK_TMP = []
         SUF_BL_TMP = []
         SN_BL_TMP = []
+        DMRID_BL_TMP = []
         printlog(1, 'Reload the Blacklist from File')
         for row in file:
           content = row.strip()
@@ -507,6 +509,15 @@ def blacklist(f_bl, t_reload, cli):
             if (len(c_split) == 2 and c_split[0] == 'SN' and len(c_split[1]) == 5):      
               if (not inlist(SN_BL_TMP, c_split[1])):
                 bisect.insort(SN_BL_TMP,c_split[1])       
+
+            # DMRID
+            if (len(c_split) == 2 and c_split[0] == 'DMRID'):
+              try:
+                dmrid = int(c_split[1])
+                if (not inlist(DMRID_BL_TMP, dmrid)):
+                  bisect.insort(DMRID_BL_TMP,dmrid)
+              except:
+                printlog(2, 'Invalid DMRID ' + c_split[1])
                 
             # IP      
             if (len(c_split) == 2 and c_split[0] == 'IP'):      
@@ -543,7 +554,8 @@ def blacklist(f_bl, t_reload, cli):
       IP_LK = IP_LK_TMP.copy()
       SUF_BL = SUF_BL_TMP.copy()
       SN_BL = SN_BL_TMP.copy()
-      printlog(1, 'Loaded ' + str(len(BLACK_LIST)) + '/CS ' + str(len(WHITE_LIST)) + '/AL ' + str(len(GW_BL)) + '/GW ' + str(len(IP_BL)) + '/IP ' + str(len(GW_LK)) + '/GWB ' + str(len(IP_LK)) + '/IPB ' + str(len(SUF_BL)) + '/SB ' + str(len(SN_BL)) + '/SN')
+      DMRID_BL = DMRID_BL_TMP.copy()
+      printlog(1, 'Loaded ' + str(len(BLACK_LIST)) + '/CS ' + str(len(WHITE_LIST)) + '/AL ' + str(len(GW_BL)) + '/GW ' + str(len(IP_BL)) + '/IP ' + str(len(GW_LK)) + '/GWB ' + str(len(IP_LK)) + '/IPB ' + str(len(SUF_BL)) + '/SB ' + str(len(SN_BL)) + '/SN ' + str(len(DMRID_BL)) + '/DMRID')
       f_time_old = f_time
       update_clients(cli)
     else:
@@ -921,6 +933,7 @@ def RunServer(config):
     global aprs_en
     global aprs_ssid
     global SN_BL
+    global DMRID_BL
     global refl_contact
     global refl_web
     global dgid_local
@@ -1210,6 +1223,13 @@ def RunServer(config):
                                 radio_code = gps.radio_code
                                 printlog(1, '<' + str(tx[5]).zfill(7) + '> Additional information radio code:' +  str(radio_code))
                                 json_mess.put('{"stream_id03": "' + str(tx[5]).zfill(7) + '", "radio_code": "' + str(radio_code) + '"}')
+                                if inlist(DMRID_BL, radio_code):
+                                  printlog(1, '<' + str(tx[5]).zfill(7) + '> Blocked DMRID ' + str(radio_code) + ' from ' + tx[3])
+                                  if (not inlist(BLK_TMP, tx[3])):
+                                    bisect.insort(BLK_TMP, tx[3])
+                                  json_mess.put('{"blocked": "-1", "CS": "' + tx[3] + '", "GW": "' + tx[2] + '", "BR": "DMRID", "time": "' + str(datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S.%f'))[:-3] + '"}')
+                                  STR.remove(tx)
+                                  continue
                               if ((tx[7] == 999.0) and (gps.latitude != 999.0)):
                                 lock_tx.acquire()
                                 tx[7] = gps.latitude
@@ -1516,6 +1536,7 @@ SCHED = []
 W_PTT = []
 SUF_BL = []
 SN_BL = []
+DMRID_BL = []
 GW_HOME = []
 APRS_STR = queue.Queue()
 lock_tx = threading.Lock()

@@ -38,7 +38,9 @@ GWB: <gateway name>
 IP: <IP gateway>
 IPB: <IP gateway>
 SN: <radio serial number>
+DMRID: <DMR id>
 
 GW and IP enable the gw to listen, but not to transmit
 GWB and IPB block the gw both in transmission and in reception, however managing the protocol, so the gateway remains connected to the reflector
 Serial SN of devices blocked in transmission
+DMRID blocked in transmission
