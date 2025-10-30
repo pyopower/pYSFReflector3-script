@@ -30,17 +30,21 @@ WORKDIR /opt/pysfreflector
 # --no-cache-dir evita que pip guarde paquetes en caché, reduciendo el tamaño de la imagen.
 RUN pip install --no-cache-dir aprslib tinydb
 
-# 7. Permisos de Ejecución
+# 7. Copiar y Preparar el Entrypoint
+# Se copia el script que genera la configuración y se le dan permisos de ejecución.
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# 8. Permisos de Ejecución para la Aplicación
 # Se asegura de que el script principal del reflector tenga permisos para ser ejecutado.
 RUN chmod +x YSFReflector
 
-# 8. Exponer el Puerto
+# 9. Exponer el Puerto
 # Se informa a Docker que el contenedor escuchará en el puerto 42000 en tiempo de ejecución.
-# Este es el puerto por defecto del reflector, pero puede ser mapeado a cualquier
-# puerto del host a través de docker-compose.
 EXPOSE 42000
 
-# 9. Comando de Inicio por Defecto
-# Este es el comando que se ejecutará cuando el contenedor se inicie.
-# Lanza el reflector usando Python 3.
+# 10. Entrypoint y Comando por Defecto
+# El ENTRYPOINT es el script que se ejecutará al iniciar el contenedor.
+# El CMD son los argumentos que se le pasarán a ese script.
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["python3", "/opt/pysfreflector/YSFReflector"]

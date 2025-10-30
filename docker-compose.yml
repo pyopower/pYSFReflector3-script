@@ -23,15 +23,57 @@ services:
     ports:
       - "42000:42000/udp"
 
-    # Volúmenes para persistencia de la configuración.
-    # Esto es clave para gestionar la configuración fuera del contenedor.
-    # Cualquier cambio en estos archivos en el host se reflejará dentro
-    # del contenedor, permitiendo una gestión sencilla de la lista negra y
-    # la configuración general.
-    volumes:
-      # Mapea el archivo de configuración principal.
-      - ./pysfreflector.ini:/opt/pysfreflector/pysfreflector.ini
+    # Variables de Entorno para la Configuración del Reflector.
+    # El script 'entrypoint.sh' usará estas variables para generar el
+    # fichero 'pysfreflector.ini' cada vez que el contenedor se inicie.
+    # Modifica los valores según tus necesidades.
+    environment:
+      # --- Sección [Info] ---
+      - INFO_NAME=YSF Reflector by Docker
+      - INFO_DESCRIPTION=Dockerized pYSFReflector
+      - INFO_CONTACT=
+      - INFO_WEB=
 
-      # Mapea el archivo de la lista negra (deny.db).
-      # ¡Aquí es donde se gestionan los indicativos baneados!
+      # --- Sección [Log] ---
+      # Por defecto, los logs se envían a la consola de Docker.
+      - LOG_DISPLAY_LEVEL=1
+      - LOG_FILE_LEVEL=0
+
+      # --- Sección [Network] ---
+      - NETWORK_PORT=42000
+      - NETWORK_JSON_IP=127.0.0.1
+      - NETWORK_JSON_PORT=42001
+      - NETWORK_DEBUG=0
+
+      # --- Sección [Block List] ---
+      - BLOCKLIST_TIME=0.5
+      - BLOCKLIST_CHECK_RE=1
+
+      # --- Sección [Protections] ---
+      - PROTECTIONS_TIMEOUT=190
+      - PROTECTIONS_WILD_PTT_TIME=5
+      - PROTECTIONS_WILD_PTT_COUNT=4
+      - PROTECTIONS_TREACTIVATE=900
+
+      # --- Sección [APRS] ---
+      - APRS_ENABLE=0
+      - APRS_SERVER=aprs.grupporadiofirenze.net
+      - APRS_PORT=14580
+      - APRS_SSID=-10
+
+      # --- Sección [DGID] ---
+      - DGID_LIST=1,9,50
+      - DGID_DEFAULT=50
+      - DGID_LOCAL=1
+      - DGID_AUX_PORT=
+      - DGID_PREFIX=1
+      - DGID_BTH_TIME=900.0
+
+      # --- Sección [REFL_ALIAS] ---
+      - REFL_ALIAS_01=
+
+    # Volúmenes para persistencia de datos.
+    # Se mantiene el volumen para deny.db, ya que es un fichero de datos
+    # que se quiere gestionar desde el host.
+    volumes:
       - ./deny.db:/opt/pysfreflector/deny.db
