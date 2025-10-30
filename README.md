@@ -38,3 +38,61 @@ El script es interactivo y te guiará durante el proceso:
 6.  **Instrucciones Finales**: Al terminar, te mostrará los comandos exactos para habilitar e iniciar los servicios.
 
 Una vez finalizado el script, tu sistema pYSFReflector3 estará listo y funcional.
+
+---
+
+## Despliegue con Docker
+
+Para una mayor portabilidad y facilidad de gestión, este repositorio también incluye la configuración necesaria para desplegar el reflector como un contenedor de Docker.
+
+### Prerrequisitos
+
+*   **Docker**: [Instrucciones de instalación](https://docs.docker.com/engine/install/)
+*   **Docker Compose**: [Instrucciones de instalación](https://docs.docker.com/compose/install/)
+
+### Instrucciones de Despliegue
+
+El despliegue con Docker simplifica enormemente la gestión del reflector.
+
+1.  **Configuración Inicial**: Antes de lanzar el servicio por primera vez, asegúrate de que los ficheros `pysfreflector.ini` y `deny.db` existen en este directorio. Si `deny.db` no existe, puedes crearlo con el comando `touch deny.db`. Una vez verificados los ficheros, edita `pysfreflector.ini` para ajustar la configuración de tu reflector (nombre, descripción, etc.).
+
+2.  **Construir e Iniciar el Servicio**: Abre una terminal en este directorio y ejecuta:
+    ```bash
+    docker-compose up --build -d
+    ```
+    *   `--build`: Necesario la primera vez que lo ejecutas o si modificas el `Dockerfile`.
+    *   `-d`: Ejecuta el contenedor en segundo plano (modo "detached").
+
+3.  **Gestionar la Configuración**:
+    *   **Lista Negra**: Para banear o permitir indicativos, simplemente edita el fichero `deny.db` en este directorio.
+    *   **Aplicar Cambios**: Después de modificar `deny.db` o `pysfreflector.ini`, aplica los cambios reiniciando el contenedor:
+        ```bash
+        docker-compose restart
+        ```
+
+4.  **Comandos Útiles**:
+    *   **Ver Logs en Tiempo Real**:
+        ```bash
+        docker-compose logs -f
+        ```
+    *   **Detener el Servicio**:
+        ```bash
+        docker-compose down
+        ```
+
+### Entendiendo el `docker-compose.yml`
+
+El fichero `docker-compose.yml` orquesta la creación y gestión del contenedor. Aquí se describen sus variables clave:
+
+*   `version: '3.8'`: Define la versión de la sintaxis de Docker Compose que se está utilizando.
+*   `services`: Define los diferentes contenedores que gestionará Docker Compose. En este caso, solo uno: `ysfreflector`.
+*   `container_name: ysfreflector`: Asigna un nombre predecible al contenedor para identificarlo fácilmente.
+*   `build`:
+    *   `context: .`: Indica a Docker que construya la imagen desde el directorio actual.
+    *   `dockerfile: Dockerfile`: Especifica que debe usar el fichero `Dockerfile` para construirla.
+*   `restart: always`: Política de reinicio. Asegura que el contenedor se inicie automáticamente si se detiene o si se reinicia el sistema.
+*   `ports`: Mapea los puertos entre el host y el contenedor.
+    *   `"42000:42000/udp"`: Conecta el puerto UDP 42000 de tu máquina al puerto 42000 del contenedor, permitiendo que las radios se conecten al reflector.
+*   `volumes`: Sincroniza ficheros o carpetas entre el host y el contenedor.
+    *   `./pysfreflector.ini:/opt/pysfreflector/pysfreflector.ini`: Permite editar el fichero de configuración principal desde fuera del contenedor.
+    *   `./deny.db:/opt/pysfreflector/deny.db`: Permite gestionar la lista de baneados de la misma manera.
