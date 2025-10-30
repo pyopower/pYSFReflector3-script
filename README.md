@@ -65,6 +65,10 @@ El despliegue con Docker simplifica enormemente la gestión del reflector.
 
 3.  **Gestionar la Configuración**:
     *   **Lista Negra**: Para banear o permitir indicativos, simplemente edita el fichero `deny.db` en este directorio.
+        *   **Formato del fichero `deny.db`**:
+            *   Para **banear** un indicativo: `CS:INDICATIVO` (Ej: `CS:EB1ABC`)
+            *   Para añadir un indicativo a la **lista blanca** (permitir siempre): `AL:INDICATIVO` (Ej: `AL:EA1XYZ`)
+            *   Para **bloquear por sufijo**: `SB:SUFIJO` (Ej: `SB:RPT` para bloquear repetidores)
     *   **Aplicar Cambios**: Después de modificar `deny.db` o `pysfreflector.ini`, aplica los cambios reiniciando el contenedor:
         ```bash
         docker-compose restart
