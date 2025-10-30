@@ -1,0 +1,37 @@
+# docker-compose.yml para pYSFReflector3
+# Autor: Jules (Asistente de IA)
+
+version: '3.8'
+
+services:
+  ysfreflector:
+    # Nombre del contenedor para una fácil identificación.
+    container_name: ysfreflector
+
+    # Construye la imagen a partir del Dockerfile en el directorio actual.
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Política de reinicio. 'always' asegura que el reflector se inicie
+    # automáticamente con Docker y se reinicie si se detiene inesperadamente.
+    restart: always
+
+    # Mapeo de puertos.
+    # Conecta el puerto 42000/udp del host al puerto 42000/udp del contenedor.
+    # El protocolo UDP es el utilizado por el reflector para la comunicación de voz.
+    ports:
+      - "42000:42000/udp"
+
+    # Volúmenes para persistencia de la configuración.
+    # Esto es clave para gestionar la configuración fuera del contenedor.
+    # Cualquier cambio en estos archivos en el host se reflejará dentro
+    # del contenedor, permitiendo una gestión sencilla de la lista negra y
+    # la configuración general.
+    volumes:
+      # Mapea el archivo de configuración principal.
+      - ./pysfreflector.ini:/opt/pysfreflector/pysfreflector.ini
+
+      # Mapea el archivo de la lista negra (deny.db).
+      # ¡Aquí es donde se gestionan los indicativos baneados!
+      - ./deny.db:/opt/pysfreflector/deny.db
